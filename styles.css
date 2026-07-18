@@ -87,7 +87,7 @@ h1 {
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -137,6 +137,7 @@ output {
 input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
+  margin-bottom: 10px;
 }
 
 .button-grid {
@@ -178,6 +179,11 @@ button:disabled {
 .ghost {
   background: transparent;
   border-color: var(--line);
+}
+
+.ghost.is-on {
+  border-color: rgba(0, 208, 132, 0.72);
+  color: #b8ffe3;
 }
 
 @media (max-width: 460px) {

@@ -5,11 +5,15 @@ const ui = {
   angleReadout: document.querySelector("#angleReadout"),
   stepsReadout: document.querySelector("#stepsReadout"),
   bpmReadout: document.querySelector("#bpmReadout"),
+  motionReadout: document.querySelector("#motionReadout"),
   distanceInput: document.querySelector("#distanceInput"),
   distanceOutput: document.querySelector("#distanceOutput"),
+  sensitivityInput: document.querySelector("#sensitivityInput"),
+  sensitivityOutput: document.querySelector("#sensitivityOutput"),
   permissionButton: document.querySelector("#permissionButton"),
   lockButton: document.querySelector("#lockButton"),
   resetButton: document.querySelector("#resetButton"),
+  voiceButton: document.querySelector("#voiceButton"),
   simulateStepButton: document.querySelector("#simulateStepButton"),
 };
 
@@ -25,6 +29,13 @@ const state = {
   sensorsReady: false,
   lastStepAt: 0,
   lastAccelMagnitude: null,
+  filteredMotion: 0,
+  motionSamples: 0,
+  motionPeakArmed: true,
+  stepSensitivity: Number(ui.sensitivityInput.value),
+  voiceEnabled: true,
+  lastSpokenAt: 0,
+  lastSpokenKey: null,
   pulse: 0,
   bpm: 72,
 };
@@ -139,8 +150,6 @@ function handleOrientation(event) {
 }
 
 function handleMotion(event) {
-  if (!state.locked || state.arrived) return;
-
   const accel = event.accelerationIncludingGravity;
   if (!accel) return;
 
@@ -151,10 +160,24 @@ function handleMotion(event) {
   }
 
   const impulse = Math.abs(magnitude - state.lastAccelMagnitude);
-  state.lastAccelMagnitude = magnitude * 0.45 + state.lastAccelMagnitude * 0.55;
+  state.lastAccelMagnitude = magnitude * 0.22 + state.lastAccelMagnitude * 0.78;
+  state.filteredMotion = state.filteredMotion * 0.82 + impulse * 0.18;
+  state.motionSamples += 1;
+  ui.motionReadout.textContent = state.filteredMotion.toFixed(1);
 
-  if (impulse > 2.6 && Date.now() - state.lastStepAt > 420) {
+  if (!state.locked || state.arrived || state.motionSamples < 8) return;
+
+  const threshold = 1.85 - (state.stepSensitivity - 1) * 0.28;
+  const resetThreshold = threshold * 0.55;
+  const now = Date.now();
+
+  if (state.motionPeakArmed && state.filteredMotion > threshold && now - state.lastStepAt > 330) {
     registerStep();
+    state.motionPeakArmed = false;
+  }
+
+  if (state.filteredMotion < resetThreshold) {
+    state.motionPeakArmed = true;
   }
 }
 
@@ -175,6 +198,8 @@ async function lockTarget() {
   state.locked = true;
   state.arrived = false;
   state.lastStepAt = 0;
+  state.motionSamples = 0;
+  state.motionPeakArmed = true;
   ui.modeLabel.textContent = "LOCKED";
   updateNavigation();
   playConfirm();
@@ -192,6 +217,10 @@ function resetRun() {
   ui.angleReadout.textContent = state.currentHeading === null ? "--°" : `${Math.round(state.currentHeading)}°`;
   ui.stepsReadout.textContent = String(state.remainingSteps);
   ui.bpmReadout.textContent = "--";
+  ui.motionReadout.textContent = state.filteredMotion > 0 ? state.filteredMotion.toFixed(1) : "--";
+  state.lastSpokenAt = 0;
+  state.lastSpokenKey = null;
+  stopSpeaking();
   if (navigator.vibrate) navigator.vibrate(0);
 }
 
@@ -202,6 +231,7 @@ function registerStep() {
   state.remainingSteps = Math.max(0, state.remainingSteps - 1);
   ui.stepsReadout.textContent = String(state.remainingSteps);
   playStepTick();
+  announceDistance();
 
   if (state.remainingSteps === 0) {
     arrive();
@@ -232,6 +262,7 @@ function updateNavigation() {
   ui.angleReadout.textContent = `${Math.round(delta)}°`;
   ui.stepsReadout.textContent = String(state.remainingSteps);
   ui.bpmReadout.textContent = String(Math.round(state.bpm));
+  announceNavigation(delta, absDelta);
 }
 
 function arrive() {
@@ -240,9 +271,69 @@ function arrive() {
   ui.modeLabel.textContent = "STRIKE";
   ui.guidanceText.textContent = "到着です。ファンファーレが鳴ったら振り下ろしてください。";
   ui.bpmReadout.textContent = "210";
+  speak("止まって。そこで叩いてください。", "strike", { force: true });
   playFanfare();
   if (navigator.vibrate) {
     navigator.vibrate([180, 80, 180, 80, 420, 120, 420]);
+  }
+}
+
+function speak(text, key, options = {}) {
+  if (!state.voiceEnabled || !("speechSynthesis" in window)) return;
+
+  const now = Date.now();
+  const sameKey = key === state.lastSpokenKey;
+  if (!options.force && sameKey && now - state.lastSpokenAt < 3200) return;
+  if (!options.force && !sameKey && now - state.lastSpokenAt < 1200) return;
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "ja-JP";
+  utterance.rate = 1.18;
+  utterance.pitch = 1.05;
+  utterance.volume = 1;
+
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+  state.lastSpokenAt = now;
+  state.lastSpokenKey = key;
+}
+
+function stopSpeaking() {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+function announceNavigation(delta, absDelta) {
+  if (!state.locked || state.arrived) return;
+
+  if (state.remainingSteps <= 1 && absDelta <= 22) {
+    speak("止まって。目の前です。", "stop");
+    return;
+  }
+
+  if (absDelta <= 15) {
+    speak("まっすぐ。", "straight");
+    return;
+  }
+
+  if (absDelta <= 45) {
+    speak(delta > 0 ? "少し右。" : "少し左。", delta > 0 ? "soft-right" : "soft-left");
+    return;
+  }
+
+  speak(delta > 0 ? "もっと右。" : "もっと左。", delta > 0 ? "hard-right" : "hard-left");
+}
+
+function announceDistance() {
+  if (state.arrived) return;
+
+  if (state.remainingSteps === 3) {
+    speak("あと三歩。", "three-left", { force: true });
+  } else if (state.remainingSteps === 2) {
+    speak("あと二歩。", "two-left", { force: true });
+  } else if (state.remainingSteps === 1) {
+    speak("あと一歩。", "one-left", { force: true });
   }
 }
 
@@ -374,6 +465,17 @@ function drawSonar() {
 ui.permissionButton.addEventListener("click", enableExperience);
 ui.lockButton.addEventListener("click", lockTarget);
 ui.resetButton.addEventListener("click", resetRun);
+ui.voiceButton.addEventListener("click", () => {
+  state.voiceEnabled = !state.voiceEnabled;
+  ui.voiceButton.textContent = state.voiceEnabled ? "音声ガイド ON" : "音声ガイド OFF";
+  ui.voiceButton.classList.toggle("is-on", state.voiceEnabled);
+  ui.voiceButton.setAttribute("aria-pressed", String(state.voiceEnabled));
+  if (state.voiceEnabled) {
+    speak("音声ガイドを開始します。", "voice-on", { force: true });
+  } else {
+    stopSpeaking();
+  }
+});
 ui.simulateStepButton.addEventListener("click", () => {
   ensureAudio().then(() => {
     state.audioReady = true;
@@ -387,6 +489,17 @@ ui.distanceInput.addEventListener("input", () => {
     ui.stepsReadout.textContent = String(state.remainingSteps);
   }
   ui.distanceOutput.textContent = `${state.initialSteps}歩`;
+});
+ui.sensitivityInput.addEventListener("input", () => {
+  const labels = {
+    1: "低い",
+    2: "やや低い",
+    3: "標準",
+    4: "高い",
+    5: "最高",
+  };
+  state.stepSensitivity = Number(ui.sensitivityInput.value);
+  ui.sensitivityOutput.textContent = labels[state.stepSensitivity];
 });
 
 ui.stepsReadout.textContent = String(state.remainingSteps);

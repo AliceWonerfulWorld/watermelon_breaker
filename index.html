@@ -31,6 +31,10 @@
           <span>BPM</span>
           <strong id="bpmReadout">--</strong>
         </div>
+        <div>
+          <span>揺れ</span>
+          <strong id="motionReadout">--</strong>
+        </div>
       </section>
 
       <section class="controls" aria-label="操作">
@@ -40,10 +44,17 @@
         </label>
         <input id="distanceInput" type="range" min="3" max="60" value="20">
 
+        <label class="range-row" for="sensitivityInput">
+          <span>歩行感度</span>
+          <output id="sensitivityOutput" for="sensitivityInput">標準</output>
+        </label>
+        <input id="sensitivityInput" type="range" min="1" max="5" value="3">
+
         <div class="button-grid">
           <button id="permissionButton" class="secondary" type="button">音声・センサーを有効化</button>
           <button id="lockButton" class="primary" type="button">ターゲットロック</button>
           <button id="resetButton" class="danger" type="button">リセット / 中止</button>
+          <button id="voiceButton" class="ghost is-on" type="button" aria-pressed="true">音声ガイド ON</button>
           <button id="simulateStepButton" class="ghost" type="button">テスト歩行</button>
         </div>
       </section>
