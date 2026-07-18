@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#111827">
+    <title>SuikaGroove</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <section class="status-panel" aria-label="現在の誘導状態">
+        <canvas id="sonarCanvas" width="720" height="720" aria-hidden="true"></canvas>
+        <div class="status-copy">
+          <p id="modeLabel" class="eyebrow">SETUP</p>
+          <h1>SuikaGroove</h1>
+          <p id="guidanceText" class="guidance">スイカの方向へスマホの先端を向けて、ターゲットをロックしてください。</p>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="デバッグ表示">
+        <div>
+          <span>ズレ角</span>
+          <strong id="angleReadout">--°</strong>
+        </div>
+        <div>
+          <span>残り歩数</span>
+          <strong id="stepsReadout">20</strong>
+        </div>
+        <div>
+          <span>BPM</span>
+          <strong id="bpmReadout">--</strong>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="操作">
+        <label class="range-row" for="distanceInput">
+          <span>想定距離</span>
+          <output id="distanceOutput" for="distanceInput">20歩</output>
+        </label>
+        <input id="distanceInput" type="range" min="3" max="60" value="20">
+
+        <div class="button-grid">
+          <button id="permissionButton" class="secondary" type="button">音声・センサーを有効化</button>
+          <button id="lockButton" class="primary" type="button">ターゲットロック</button>
+          <button id="resetButton" class="danger" type="button">リセット / 中止</button>
+          <button id="simulateStepButton" class="ghost" type="button">テスト歩行</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

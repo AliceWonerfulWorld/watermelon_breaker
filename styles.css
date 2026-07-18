@@ -1,0 +1,202 @@
+:root {
+  color-scheme: dark;
+  --bg: #101820;
+  --panel: #17212b;
+  --panel-2: #202b35;
+  --text: #f8fafc;
+  --muted: #a8b3c1;
+  --line: rgba(255, 255, 255, 0.14);
+  --accent: #00d084;
+  --accent-2: #ffd166;
+  --danger: #ff4d6d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100svh;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(0, 208, 132, 0.18), transparent 30rem),
+    linear-gradient(145deg, #101820 0%, #1c2530 48%, #101820 100%);
+  color: var(--text);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app {
+  width: min(100%, 680px);
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: minmax(360px, 1fr) auto auto;
+  gap: 14px;
+}
+
+.status-panel {
+  position: relative;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(23, 33, 43, 0.88), rgba(13, 20, 28, 0.96));
+}
+
+#sonarCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.status-copy {
+  position: absolute;
+  inset: auto 20px 22px;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent-2);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.7rem, 13vw, 5.1rem);
+  line-height: 0.92;
+  letter-spacing: 0;
+}
+
+.guidance {
+  max-width: 32rem;
+  margin: 12px 0 0;
+  color: #e4ebf4;
+  font-size: clamp(1rem, 4vw, 1.2rem);
+  line-height: 1.55;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metrics div,
+.controls {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(23, 33, 43, 0.9);
+}
+
+.metrics div {
+  min-height: 78px;
+  padding: 12px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+}
+
+.metrics span,
+.range-row span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.metrics strong {
+  font-size: clamp(1.45rem, 7vw, 2.35rem);
+  line-height: 1;
+}
+
+.controls {
+  padding: 14px;
+}
+
+.range-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+output {
+  font-weight: 800;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+button {
+  min-height: 58px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text);
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.primary {
+  background: var(--accent);
+  color: #06150f;
+}
+
+.secondary {
+  background: var(--panel-2);
+  border-color: var(--line);
+}
+
+.danger {
+  background: var(--danger);
+}
+
+.ghost {
+  background: transparent;
+  border-color: var(--line);
+}
+
+@media (max-width: 460px) {
+  .app {
+    grid-template-rows: minmax(330px, 1fr) auto auto;
+    padding-inline: 10px;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics div {
+    min-height: 62px;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+  .button-grid {
+    grid-template-columns: 1fr;
+  }
+}
